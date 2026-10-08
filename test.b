@@ -1,3 +1,10 @@
+>>
+,
+.
+
+
+
+! Printer below
 > Move to 1
 +++ Add 3
 [

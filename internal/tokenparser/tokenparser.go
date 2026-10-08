@@ -10,14 +10,14 @@ import (
 type Token int
 
 const (
-	tokenDataIncrement Token = iota
-	tokenDataDecrement
-	tokenByteIncrement
-	tokenByteDecrement
-	tokenOutputByte
-	tokenInputByte
-	tokenJumpIfZero
-	tokenJumpToLoopStart
+	TokenDataIncrement Token = iota
+	TokenDataDecrement
+	TokenByteIncrement
+	TokenByteDecrement
+	TokenOutputByte
+	TokenInputByte
+	TokenJumpIfZero
+	TokenJumpToLoopStart
 )
 
 func ParseSourceCode(fileName string) ([]Token, error) {
@@ -51,21 +51,21 @@ func parseToken(r rune) (Token, error) {
 	var o Token = 0
 	switch r {
 	case '<':
-		o = tokenDataIncrement
+		o = TokenDataIncrement
 	case '>':
-		o = tokenDataDecrement
+		o = TokenDataDecrement
 	case '+':
-		o = tokenByteIncrement
+		o = TokenByteIncrement
 	case '-':
-		o = tokenByteDecrement
+		o = TokenByteDecrement
 	case '[':
-		o = tokenJumpIfZero
+		o = TokenJumpIfZero
 	case ']':
-		o = tokenJumpToLoopStart
+		o = TokenJumpToLoopStart
 	case '.':
-		o = tokenOutputByte
+		o = TokenOutputByte
 	case ',':
-		o = tokenInputByte
+		o = TokenInputByte
 	default:
 		return 0, errors.New("Could not parse rune to token")
 	}
