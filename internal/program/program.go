@@ -1,6 +1,7 @@
 package program
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,7 @@ type ProgramState struct {
 	instructionPointer uint
 	program            []tokenparser.Token
 	cells              map[uint]uint8
+	stack              []uint
 }
 
 func (p *ProgramState) Initialize(program []tokenparser.Token) {
@@ -20,6 +22,7 @@ func (p *ProgramState) Initialize(program []tokenparser.Token) {
 	p.instructionPointer = 0
 	p.program = program
 	p.cells = make(map[uint]uint8)
+	p.stack = []uint{}
 }
 
 func (p *ProgramState) Execute() {
@@ -30,6 +33,33 @@ func (p *ProgramState) Execute() {
 	}
 }
 
+func (p *ProgramState) jumpToMatchingBrace(from uint) error {
+	if p.program[p.instructionPointer] == tokenparser.TokenJumpIfZero {
+		p.stack = append(p.stack, p.instructionPointer)
+		for {
+			if int(p.instructionPointer+1) < len(p.program) {
+				p.instructionPointer++
+				if p.program[p.instructionPointer] == tokenparser.TokenJumpIfZero {
+					p.stack = append(p.stack, p.instructionPointer)
+				} else if p.program[p.instructionPointer] == tokenparser.TokenJumpIfZero {
+					if p.stack[len(p.stack)-1] == from {
+						p.stack = p.stack[:len(p.stack)-1]
+						break
+					} else {
+						p.stack = p.stack[:len(p.stack)-1]
+					}
+				}
+			} else {
+				return errors.New("Can not jump to matching brace")
+			}
+		}
+	} else {
+		return errors.New("Can not jump to matching brace from end of an program")
+	}
+
+	return nil
+}
+
 func (p *ProgramState) processNextToken() bool {
 	if int(p.instructionPointer) > len(p.program) {
 		return false
@@ -37,22 +67,18 @@ func (p *ProgramState) processNextToken() bool {
 	token := p.program[p.instructionPointer]
 	switch token {
 	case tokenparser.TokenDataIncrement:
-		log.Println("Token: >")
-		p.dataPointer++
+		p.dataPointer = p.dataPointer + 1
 	case tokenparser.TokenDataDecrement:
-		log.Println("Token: <")
-		p.dataPointer--
+		if p.dataPointer > 0 {
+			p.dataPointer = p.dataPointer - 1
+		}
 	case tokenparser.TokenByteIncrement:
-		log.Println("Token: +")
 		p.cells[p.dataPointer] = p.cells[p.dataPointer] + 1
 	case tokenparser.TokenByteDecrement:
-		log.Println("Token: -")
 		p.cells[p.dataPointer] = p.cells[p.dataPointer] - 1
 	case tokenparser.TokenOutputByte:
-		log.Println("Token: .")
 		fmt.Print(string(rune(p.cells[p.dataPointer])))
 	case tokenparser.TokenInputByte:
-		log.Println("Token: ,")
 		var inputString string = ""
 		var value rune
 		for {
@@ -71,10 +97,11 @@ func (p *ProgramState) processNextToken() bool {
 		}
 		p.cells[p.dataPointer] = uint8(value)
 	case tokenparser.TokenJumpIfZero:
-		log.Println("Token: [")
-		return false
+		if p.cells[p.dataPointer] == 0 {
+			p.jumpToMatchingBrace(p.instructionPointer)
+			return true
+		}
 	case tokenparser.TokenJumpToLoopStart:
-		log.Println("Token: ]")
 		return false
 	default:
 		return false

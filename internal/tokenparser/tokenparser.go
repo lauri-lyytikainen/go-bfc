@@ -50,9 +50,9 @@ func isProgramRune(r rune) bool {
 func parseToken(r rune) (Token, error) {
 	var o Token = 0
 	switch r {
-	case '<':
-		o = TokenDataIncrement
 	case '>':
+		o = TokenDataIncrement
+	case '<':
 		o = TokenDataDecrement
 	case '+':
 		o = TokenByteIncrement
