@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/laurilyytikainen/go-bfc/internal/program"
 	"github.com/laurilyytikainen/go-bfc/internal/tokenparser"
@@ -14,7 +15,7 @@ func main() {
 	}
 
 	program := program.ProgramState{}
-	program.Initialize(code)
+	program.Initialize(code, os.Stdin, os.Stdin)
 
 	program.Execute()
 }

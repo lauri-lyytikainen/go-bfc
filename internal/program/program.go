@@ -1,8 +1,9 @@
 package program
 
 import (
+	"bufio"
 	"errors"
-	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -15,9 +16,15 @@ type ProgramState struct {
 	program            []tokenparser.Token
 	cells              map[uint]uint8
 	jumpTable          map[uint]uint
+	reader             *bufio.Reader
+	writer             *bufio.Writer
 }
 
-func (p *ProgramState) Initialize(program []tokenparser.Token) {
+func (p *ProgramState) Initialize(
+	program []tokenparser.Token,
+	ioReader io.Reader,
+	ioWriter io.Writer,
+) {
 	p.dataPointer = 0
 	p.instructionPointer = 0
 	p.program = program
@@ -27,6 +34,8 @@ func (p *ProgramState) Initialize(program []tokenparser.Token) {
 		log.Fatalf("%+v", err)
 		os.Exit(1)
 	}
+	p.reader = bufio.NewReader(ioReader)
+	p.writer = bufio.NewWriter(ioWriter)
 }
 
 func (p *ProgramState) createJumpTable() error {
@@ -78,24 +87,21 @@ func (p *ProgramState) processNextToken() bool {
 	case tokenparser.TokenByteDecrement:
 		p.cells[p.dataPointer] = p.cells[p.dataPointer] - 1
 	case tokenparser.TokenOutputByte:
-		fmt.Print(string(rune(p.cells[p.dataPointer])))
+		p.writer.WriteByte(p.cells[p.dataPointer])
 	case tokenparser.TokenInputByte:
-		var inputString string = ""
-		var value rune
-		for {
-			_, err := fmt.Scanln(&inputString)
-			// TODO: Read one byte at a time using bufio reader and readbyte
-			if err != nil {
-				log.Fatalf("%+v", err)
-			}
-			if len(inputString) < 1 {
-				fmt.Println("Please input at least one character")
-				continue
-			}
-			value = rune(inputString[0])
-			break
+		err := p.writer.Flush()
+		if err != nil {
+			log.Fatalf("Failed to flush output")
 		}
-		p.cells[p.dataPointer] = uint8(value)
+		byte, err := p.reader.ReadByte()
+		if err != nil {
+			if err != io.EOF {
+				log.Fatalf("Failed to read byte from input")
+			}
+			p.cells[p.dataPointer] = 0
+		} else {
+			p.cells[p.dataPointer] = byte
+		}
 	case tokenparser.TokenJumpIfZero:
 		if p.cells[p.dataPointer] == 0 {
 			target, ok := p.jumpTable[p.instructionPointer]
@@ -118,5 +124,9 @@ func (p *ProgramState) processNextToken() bool {
 		return false
 	}
 	p.instructionPointer++
+	err := p.writer.Flush()
+	if err != nil {
+		log.Fatalf("Failed to flush output")
+	}
 	return true
 }
