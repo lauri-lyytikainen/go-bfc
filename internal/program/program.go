@@ -32,7 +32,6 @@ func (p *ProgramState) Initialize(
 	err := p.createJumpTable()
 	if err != nil {
 		log.Fatalf("%+v", err)
-		os.Exit(1)
 	}
 	p.reader = bufio.NewReader(ioReader)
 	p.writer = bufio.NewWriter(ioWriter)
