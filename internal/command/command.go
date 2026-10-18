@@ -1,9 +1,10 @@
 package command
+
 import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
+	"io"
 )
 
 type commandType int
@@ -21,17 +22,29 @@ type Command struct {
 	Verbose        bool
 }
 
-func ParseArgs(args []string) (*Command, error) {
+func (c *Command) Equals(other *Command) bool {
+	if c.SourceFilePath != other.SourceFilePath ||
+		c.Command != other.Command ||
+		c.OutputFilePath != other.OutputFilePath ||
+		c.Verbose != other.Verbose {
+		return false
+	}
+
+	return true
+}
+
+func ParseArgs(args []string, stream io.Writer) (*Command, error) {
 	arguments := Command{}
 
 	if len(args) == 0 {
-		PrintUsage()
+		PrintUsage(stream)
 		return &arguments, nil
 	}
 
 	runFS := flag.NewFlagSet("run", flag.ContinueOnError)
 	runFS.BoolVar(&arguments.Verbose, "verbose", false, "Verbose output")
 	// TODO: verbose does nothing for now
+	// TODO: -verbose after file argument does nothing
 
 	buildFS := flag.NewFlagSet("build", flag.ContinueOnError)
 
@@ -63,7 +76,7 @@ func ParseArgs(args []string) (*Command, error) {
 				return &arguments, nil
 			}
 		}
-		PrintUsage()
+		PrintUsage(stream)
 		arguments.Command = None
 	case "version", "-version", "--version":
 		fmt.Println("bfc 0.0.1")
@@ -74,8 +87,8 @@ func ParseArgs(args []string) (*Command, error) {
 	return &arguments, nil
 }
 
-func PrintUsage() {
-	fmt.Fprintf(os.Stderr, `Usage: bfc <command> [flags] <file>
+func PrintUsage(stream io.Writer) {
+	fmt.Fprintf(stream, `Usage: bfc <command> [flags] <file>
 
 Commands:
     run        interpret a Brainfuck program

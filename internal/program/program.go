@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"log"
-	"os"
 
 	"github.com/laurilyytikainen/go-bfc/internal/tokenparser"
 )

@@ -13,7 +13,7 @@ import (
 func main() {
 
 	osArgs := os.Args[1:]
-	args, err := command.ParseArgs(osArgs)
+	args, err := command.ParseArgs(osArgs, os.Stdout)
 	if err != nil {
 		fmt.Printf("%+v\n", err)
 		os.Exit(1)
